@@ -3,6 +3,7 @@ package chat
 import (
 	"bufio"
 	"errors"
+	"math"
 	"os"
 	"strings"
 )
@@ -64,7 +65,7 @@ func (p *Parser) Parse(file *os.File) (err error, result Result) {
 
 	scanner := bufio.NewScanner(file)
 
-	var index, textCursor, searchCursor uint
+	var index, textCursor uint
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -91,27 +92,14 @@ func (p *Parser) Parse(file *os.File) (err error, result Result) {
 			if category == Reaction {
 				emoji, sentence := p.extractReaction(text)
 
-				searchCursor = index - 1
-
-				// 어느 글에서 리엑션을 했는지 판단하는
-				for searchCursor > 0 && searchCursor > index-20 {
-
-					beforeChat := result.ZoomChatHistory[searchCursor]
-
-					if strings.Contains(beforeChat.Text, sentence) {
-						var chatId *uint = &beforeChat.Id
-						result.ZoomChatHistory[index-1].ReactId = chatId
-						break
-					}
-
-					searchCursor--
-				}
-
+				id := p.findIDFromChatHistoryByText(sentence, index, result.ZoomChatHistory)
+				result.ZoomChatHistory[index-1].ReactId = id
 				result.ZoomChatHistory[index-1].Text = emoji
 
 			} else if category == NormalText {
 				result.ZoomChatHistory[index-1].Text += text
 			} else if category == Reply {
+				// sentence := p.extractReply(text)
 			}
 
 			textCursor++
@@ -165,7 +153,6 @@ func (p *Parser) extractReply(message string) (sentence string) {
 }
 
 func (p *Parser) extractRemove(message string) (emoji, sentence string) {
-	// Removed a 🍺 reaction from "from plotly import t..."
 	prefix := `Removed a `
 	suffix := " reaction from"
 	start := strings.Index(message, prefix) + len(prefix)
@@ -175,5 +162,24 @@ func (p *Parser) extractRemove(message string) (emoji, sentence string) {
 
 	sentence = message[end+len(suffix)+2 : len(message)-2]
 	sentence = strings.TrimRight(sentence, ".")
+	return
+}
+
+func (p *Parser) findIDFromChatHistoryByText(text string, currentIndex uint, history []*ZoomChatHistory) (id *uint) {
+	cursor := currentIndex - 2
+	count := 10
+	for cursor < math.MaxUint32 && count >= 0 {
+
+		beforeChat := history[cursor]
+
+		if strings.Contains(beforeChat.Text, text) {
+			id = &beforeChat.Id
+			return
+		}
+
+		cursor--
+		count--
+	}
+
 	return
 }
