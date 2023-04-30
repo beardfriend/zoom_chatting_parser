@@ -160,5 +160,20 @@ func (p *Parser) extractReply(message string) (sentence string) {
 	start := strings.Index(message, prefix) + len(prefix)
 
 	sentence = message[start : len(message)-1]
+	sentence = strings.TrimRight(sentence, ".")
 	return sentence
+}
+
+func (p *Parser) extractRemove(message string) (emoji, sentence string) {
+	// Removed a 🍺 reaction from "from plotly import t..."
+	prefix := `Removed a `
+	suffix := " reaction from"
+	start := strings.Index(message, prefix) + len(prefix)
+	end := strings.Index(message, suffix)
+
+	emoji = message[start:end]
+
+	sentence = message[end+len(suffix)+2 : len(message)-2]
+	sentence = strings.TrimRight(sentence, ".")
+	return
 }

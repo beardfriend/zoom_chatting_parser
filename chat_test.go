@@ -51,9 +51,39 @@ func TestExtractReaction(t *testing.T) {
 	})
 
 	t.Run("over char message", func(t *testing.T) {
-		message := `Reacted to "그래서 저는 다른사람이 분석한거 먼저..." with 👏🏻`
+		message := `	Reacted to "그래서 저는 다른사람이 분석한거 먼저..." with 👏🏻`
 		emoji, sentence := ReactionExtractFunc(parser, message)
 		assert.Equal(t, "👏🏻", emoji)
 		assert.Equal(t, "그래서 저는 다른사람이 분석한거 먼저", sentence)
+	})
+}
+
+func TestExtractReply(t *testing.T) {
+	parser := z.NewParser()
+	ReplyExtractFunc := z.ExportExtractReply
+
+	t.Run("url", func(t *testing.T) {
+		message := `	Replying to "https://plotly.com/p..."`
+		sentence := ReplyExtractFunc(parser, message)
+
+		assert.Equal(t, "https://plotly.com/p", sentence)
+	})
+
+	t.Run("normal text over char", func(t *testing.T) {
+		message := `	Replying to "파일이 다운로드 안되네요. 다운되자마..."`
+		sentence := ReplyExtractFunc(parser, message)
+		assert.Equal(t, "파일이 다운로드 안되네요. 다운되자마", sentence)
+	})
+}
+
+func TestExtractRemove(t *testing.T) {
+	parser := z.NewParser()
+	RemoveExtractFunc := z.ExportExtractRemove
+
+	t.Run("normal text char over", func(t *testing.T) {
+		message := `	Removed a 👍 reaction from "plt.rcParams['font.f..."`
+		emoji, sentence := RemoveExtractFunc(parser, message)
+		assert.Equal(t, "👍", emoji)
+		assert.Equal(t, "plt.rcParams['font.f", sentence)
 	})
 }
