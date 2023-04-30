@@ -87,3 +87,53 @@ func TestExtractRemove(t *testing.T) {
 		assert.Equal(t, "plt.rcParams['font.f", sentence)
 	})
 }
+
+func TestFindIdFromChatHistory(t *testing.T) {
+	parser := z.NewParser()
+	result := z.Result{
+		ZoomChatHistory: []*z.ZoomChatHistory{
+			{
+				Id:           1,
+				TextType:     z.NormalText,
+				SenderName:   "박세훈",
+				ReceiverName: "모두에게",
+				Text:         "좋은 아침이예요!",
+				ChatedAt:     "09:00:01",
+			},
+			{
+				Id:           2,
+				TextType:     z.NormalText,
+				SenderName:   "김또깡",
+				ReceiverName: "모두에게",
+				Text:         "주피터돌리다가 크롬이 구역질해요",
+				ChatedAt:     "09:00:03",
+			},
+			{
+				Id:           3,
+				TextType:     z.NormalText,
+				SenderName:   "아라이",
+				ReceiverName: "모두에게",
+				Text:         "예압",
+				ChatedAt:     "09:00:01",
+			},
+			{
+				Id:           4,
+				TextType:     z.NormalText,
+				SenderName:   "오우상",
+				ReceiverName: "모두에게",
+				Text:         "겨울인데 여름처럼 더워지고",
+				ChatedAt:     "09:00:01",
+			},
+		},
+	}
+	t.Run("텍스트가 왼전 일치하는 경우", func(t *testing.T) {
+		FindIdFromChatHistory := z.ExportFindIdFromChatHistoryByText(parser, "좋은 아침이예요!", uint(5), result.ZoomChatHistory)
+		assert.Equal(t, uint(1), *FindIdFromChatHistory)
+	})
+
+	t.Run("텍스트 일부가 포함되어 있는 경우", func(t *testing.T) {
+		// Todo: 찾으려는 텍스트 이전에
+		FindIdFromChatHistory := z.ExportFindIdFromChatHistoryByText(parser, "좋은", uint(5), result.ZoomChatHistory)
+		assert.Equal(t, uint(1), *FindIdFromChatHistory)
+	})
+}
