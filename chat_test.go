@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	z "github.com/beardfriend/zoom_chat_parser"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,6 +39,21 @@ func TestFilExist(t *testing.T) {
 	})
 }
 
-func TestModule(t *testing.T) {
-	extractReaction()
+func TestExtractReaction(t *testing.T) {
+	parser := z.NewParser()
+	ReactionExtractFunc := z.ExportExtractReaction
+
+	t.Run("normal message", func(t *testing.T) {
+		message := `	Reacted to "좋은 아침이예요!" with 🙌`
+		emoji, sentence := ReactionExtractFunc(parser, message)
+		assert.Equal(t, "🙌", emoji)
+		assert.Equal(t, "좋은 아침이예요!", sentence)
+	})
+
+	t.Run("over char message", func(t *testing.T) {
+		message := `Reacted to "그래서 저는 다른사람이 분석한거 먼저..." with 👏🏻`
+		emoji, sentence := ReactionExtractFunc(parser, message)
+		assert.Equal(t, "👏🏻", emoji)
+		assert.Equal(t, "그래서 저는 다른사람이 분석한거 먼저", sentence)
+	})
 }

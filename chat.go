@@ -85,11 +85,11 @@ func (p *Parser) Parse(file *os.File) (err error, result Result) {
 		} else {
 
 			text := strings.TrimPrefix(line, "\t")
-			category := categorizeMessage(text)
+			category := p.categorizeMessage(text)
 
 			// 리엑션일 때는 리엑션이 어느 글에서 했는지 판단
 			if category == Reaction {
-				emoji, sentence := extractReaction(text)
+				emoji, sentence := p.extractReaction(text)
 
 				searchCursor = index - 1
 
@@ -123,7 +123,7 @@ func (p *Parser) Parse(file *os.File) (err error, result Result) {
 	return
 }
 
-func categorizeMessage(message string) ChatContentType {
+func (p *Parser) categorizeMessage(message string) ChatContentType {
 	switch {
 	case strings.HasPrefix(message, "Reacted to "):
 		return Reaction
@@ -139,7 +139,7 @@ func categorizeMessage(message string) ChatContentType {
 	}
 }
 
-func extractReaction(message string) (emoji string, sentence string) {
+func (p *Parser) extractReaction(message string) (emoji string, sentence string) {
 	prefix := `Reacted to "`
 	suffix := `" with `
 
@@ -154,7 +154,7 @@ func extractReaction(message string) (emoji string, sentence string) {
 	return
 }
 
-func extractReply(message string) (sentence string) {
+func (p *Parser) extractReply(message string) (sentence string) {
 	prefix := `Replying to "`
 
 	start := strings.Index(message, prefix) + len(prefix)
