@@ -3,6 +3,7 @@ package chat_test
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	z "github.com/beardfriend/zoom_chatting_parser"
@@ -32,8 +33,12 @@ func TestFileNotExist(t *testing.T) {
 func TestFilExist(t *testing.T) {
 	parser := z.NewParser()
 	t.Run("demo", func(t *testing.T) {
-		file, _ := os.Open("assets/test.txt")
+		file, _ := os.Open("assets/1.txt")
 		result, err := parser.Parse(file)
+		for _, v := range result.ZoomChatHistory {
+			fmt.Println(v.Text)
+		}
+		fmt.Println(result.ZoomChatHistory[0].ReactIds)
 		total := float64(len(result.ZoomChatHistory))
 		fmt.Printf(`missing Reaction: %.2f%s`, float64(len(result.Statistic.MissingReactionIds))/total*100, "%\n")
 		fmt.Printf(`mssing Reply: %.2f%s`, float64(len(result.Statistic.MissingReplyIds))/total*100, "%\n")
@@ -142,4 +147,21 @@ func TestFindIdFromChatHistory(t *testing.T) {
 		FindIdFromChatHistory := z.ExportFindIdFromChatHistoryByText(parser, "좋은", uint(5), result.ZoomChatHistory)
 		assert.Equal(t, uint(1), *FindIdFromChatHistory)
 	})
+}
+
+func TestFff(t *testing.T) {
+	str := `우상단 프로필클릭
+	-> Settings
+	-> 좌하단 Developer Settings
+	-> Personel access tokens
+	-> Tokens (classic)
+	-> Generate new token (classic)
+	-> Note에 이름 작성
+	-> Expiration=No expiration(제발이번만쓸것)
+	-> 모든것 체크(제발이번만쓸것)
+	-> Generate token(이후 새로고침 금지)`
+
+	sub := `우상단 프로필클릭`
+
+	fmt.Println(strings.Contains(str, sub))
 }

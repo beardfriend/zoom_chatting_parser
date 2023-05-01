@@ -94,10 +94,11 @@ func (p *Parser) Parse(file *os.File) (result Result, err error) {
 		// 리엑션일 때는 리엑션이 어느 글에서 했는지 판단
 		if category == Reaction {
 			// 리엑션이 띄어쓰기가 됐을 경우
+			suffix := `with`
 			reactionText = text
-			if !strings.Contains(text, `" with `) {
-				reactionText += text
-				continue
+			if !strings.Contains(text, suffix) {
+				scanner.Scan()
+				reactionText += " " + scanner.Text()
 			}
 
 			emoji, sentence := p.extractReaction(reactionText)
@@ -178,7 +179,7 @@ func (p *Parser) extractReaction(message string) (emoji string, sentence string)
 	end := strings.Index(message, suffix)
 	sentence = message[start:end]
 	sentence = strings.TrimRight(sentence, ".")
-
+	sentence = strings.Trim(sentence, `"`)
 	emoji = message[end+len(suffix):]
 
 	return
@@ -209,12 +210,16 @@ func (p *Parser) extractRemove(message string) (emoji, sentence string) {
 
 func (p *Parser) findIDFromChatHistoryByText(text string, currentIndex uint, history []*ZoomChatHistory) (id *uint) {
 	cursor := currentIndex - 2
-	count := 10
+	count := 30
 	for cursor < math.MaxUint32 && count >= 0 {
 
 		beforeChat := history[cursor]
-
+		if strings.Contains(text, "\t") {
+			text = strings.Split(text, "\t")[0]
+			text = strings.TrimRight(text, " ")
+		}
 		if strings.Contains(beforeChat.Text, text) {
+
 			id = &beforeChat.Id
 			return
 		}
