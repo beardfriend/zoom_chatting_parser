@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	z "github.com/beardfriend/zoom_chat_parser"
+	z "github.com/beardfriend/zoom_chatting_parser"
 
 	"github.com/stretchr/testify/assert"
 )

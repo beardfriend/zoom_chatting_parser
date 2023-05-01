@@ -1,10 +1,9 @@
-module github.com/beardfriend/zoom_chat_parser
+module github.com/beardfriend/zoom_chatting_parser
 
 go 1.19
 
 require (
 	github.com/stretchr/testify v1.8.2
-	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
 )
 
 require (
