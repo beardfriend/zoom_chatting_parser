@@ -1,6 +1,7 @@
 package chat_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -32,7 +33,12 @@ func TestFilExist(t *testing.T) {
 	parser := z.NewParser()
 	t.Run("demo", func(t *testing.T) {
 		file, _ := os.Open("assets/test.txt")
-		err, _ := parser.Parse(file)
+		result, err := parser.Parse(file)
+		total := float64(len(result.ZoomChatHistory))
+		fmt.Printf(`missing Reaction: %.2f%s`, float64(len(result.Statistic.MissingReactionIds))/total*100, "%\n")
+		fmt.Printf(`mssing Reply: %.2f%s`, float64(len(result.Statistic.MissingReplyIds))/total*100, "%\n")
+		fmt.Printf(`missing Remove: %.2f%s`, float64(len(result.Statistic.MissingRemoveIds))/total*100, "%\n")
+
 		if err != nil {
 			assert.NoError(t, err)
 		}
