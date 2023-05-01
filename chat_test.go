@@ -3,7 +3,6 @@ package chat_test
 import (
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 
 	z "github.com/beardfriend/zoom_chatting_parser"
@@ -15,7 +14,7 @@ func TestFileNotExist(t *testing.T) {
 	parser := z.NewParser()
 
 	t.Run("nil file", func(t *testing.T) {
-		err, _ := parser.Parse(nil)
+		_, err := parser.Parse(nil)
 		assert.NotEmpty(t, err)
 	})
 
@@ -24,7 +23,7 @@ func TestFileNotExist(t *testing.T) {
 		file, _ := os.Open("nonexistent_file.txt")
 
 		// Parse
-		err, _ := parser.Parse(file)
+		_, err := parser.Parse(file)
 
 		assert.NotEmpty(t, err)
 	})
@@ -38,7 +37,7 @@ func TestFilExist(t *testing.T) {
 		for _, v := range result.ZoomChatHistory {
 			fmt.Println(v.Text)
 		}
-		fmt.Println(result.ZoomChatHistory[0].ReactIds)
+
 		total := float64(len(result.ZoomChatHistory))
 		fmt.Printf(`missing Reaction: %.2f%s`, float64(len(result.Statistic.MissingReactionIds))/total*100, "%\n")
 		fmt.Printf(`mssing Reply: %.2f%s`, float64(len(result.Statistic.MissingReplyIds))/total*100, "%\n")
@@ -138,30 +137,13 @@ func TestFindIdFromChatHistory(t *testing.T) {
 		},
 	}
 	t.Run("텍스트가 왼전 일치하는 경우", func(t *testing.T) {
-		FindIdFromChatHistory := z.ExportFindIdFromChatHistoryByText(parser, "좋은 아침이예요!", uint(5), result.ZoomChatHistory)
+		FindIdFromChatHistory := z.ExportFindIdFromChatHistoryByText(parser, "좋은 아침이예요!", uint(4), result.ZoomChatHistory)
 		assert.Equal(t, uint(1), *FindIdFromChatHistory)
 	})
 
 	t.Run("텍스트 일부가 포함되어 있는 경우", func(t *testing.T) {
 		// Todo: 찾으려는 텍스트 이전에
-		FindIdFromChatHistory := z.ExportFindIdFromChatHistoryByText(parser, "좋은", uint(5), result.ZoomChatHistory)
+		FindIdFromChatHistory := z.ExportFindIdFromChatHistoryByText(parser, "좋은", uint(4), result.ZoomChatHistory)
 		assert.Equal(t, uint(1), *FindIdFromChatHistory)
 	})
-}
-
-func TestFff(t *testing.T) {
-	str := `우상단 프로필클릭
-	-> Settings
-	-> 좌하단 Developer Settings
-	-> Personel access tokens
-	-> Tokens (classic)
-	-> Generate new token (classic)
-	-> Note에 이름 작성
-	-> Expiration=No expiration(제발이번만쓸것)
-	-> 모든것 체크(제발이번만쓸것)
-	-> Generate token(이후 새로고침 금지)`
-
-	sub := `우상단 프로필클릭`
-
-	fmt.Println(strings.Contains(str, sub))
 }

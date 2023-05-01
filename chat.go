@@ -63,95 +63,100 @@ func (p *Parser) Parse(file *os.File) (result Result, err error) {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-
-	var Id, textCursor uint
-	var reactionText string
+	texts := make([]string, 0)
 	for scanner.Scan() {
-		line := scanner.Text()
+		texts = append(texts, scanner.Text())
+	}
 
-		isMetaData := !strings.Contains(line, "\t")
-		// MetaData
-		if isMetaData {
-			splited := strings.Split(line, " ")
+	metaIds := make(map[int]bool, 0)
+	// find meta index
+	for index, v := range texts {
+		if !strings.Contains(v, "\t") {
+			metaIds[index] = true
+		}
+	}
+
+	// append extracted meta data with raw content
+	var id int
+	contents := make([]string, len(metaIds))
+	var textCount int
+	for i, v := range texts {
+		if metaIds[i] {
+			splited := strings.Split(v, " ")
 
 			result.ZoomChatHistory = append(result.ZoomChatHistory, &ZoomChatHistory{
-				Id:           Id,
+				Id:           uint(id),
 				ChatedAt:     splited[0],
 				SenderName:   splited[2],
 				ReceiverName: splited[4],
 			})
 
-			Id++
-			textCursor = 0
+			id += 1
+			textCount = 0
 			continue
 		}
+		if textCount > 0 {
+			contents[id-1] += "\n"
+		}
+		contents[id-1] += v
+		textCount++
+	}
 
-		// Text Zone
+	// append extracted raw content with Category
+	for id, content := range contents {
 
-		text := strings.TrimPrefix(line, "\t")
-		category := p.categorizeMessage(text)
-		result.ZoomChatHistory[Id-1].TextType = category
-		// 리엑션일 때는 리엑션이 어느 글에서 했는지 판단
+		content = strings.TrimLeft(content, "\t")
+		category := p.categorizeMessage(content)
+		result.ZoomChatHistory[id].TextType = category
+
 		if category == Reaction {
-			// 리엑션이 띄어쓰기가 됐을 경우
-			suffix := `with`
-			reactionText = text
-			if !strings.Contains(text, suffix) {
-				scanner.Scan()
-				reactionText += " " + scanner.Text()
-			}
+			emoji, sentence := p.extractReaction(content)
+			parentId := p.findIDFromChatHistoryByText(sentence, uint(id), result.ZoomChatHistory)
+			result.ZoomChatHistory[id].Text = emoji
 
-			emoji, sentence := p.extractReaction(reactionText)
-			id := p.findIDFromChatHistoryByText(sentence, Id, result.ZoomChatHistory)
-			result.ZoomChatHistory[Id-1].Text = emoji
-
-			if id == nil {
-				result.Statistic.MissingReactionIds = append(result.Statistic.MissingReactionIds, Id)
+			if parentId == nil {
+				result.Statistic.MissingReactionIds = append(result.Statistic.MissingReactionIds, uint(id))
 				continue
 			}
 
-			result.ZoomChatHistory[*id].ReactIds = append(result.ZoomChatHistory[*id].ReactIds, Id)
+			result.ZoomChatHistory[*parentId].ReactIds = append(result.ZoomChatHistory[*parentId].ReactIds, uint(id))
 
 		} else if category == Reply {
+			sentence := p.extractReply(content)
+			parentId := p.findIDFromChatHistoryByText(sentence, uint(id), result.ZoomChatHistory)
 
-			sentence := p.extractReply(text)
-			id := p.findIDFromChatHistoryByText(sentence, Id, result.ZoomChatHistory)
-
-			if id == nil {
-				result.Statistic.MissingReplyIds = append(result.Statistic.MissingReplyIds, Id)
+			if parentId == nil {
+				result.Statistic.MissingReplyIds = append(result.Statistic.MissingReplyIds, uint(id))
 				continue
 			}
-			result.ZoomChatHistory[*id].ReplyIds = append(result.ZoomChatHistory[*id].ReplyIds, Id)
+			result.ZoomChatHistory[*parentId].ReplyIds = append(result.ZoomChatHistory[*parentId].ReplyIds, uint(id))
 
 		} else if category == Remove {
 
-			emoji, sentence := p.extractRemove(text)
+			emoji, sentence := p.extractRemove(content)
 
-			id := p.findIDFromChatHistoryByText(sentence, Id, result.ZoomChatHistory)
-			result.ZoomChatHistory[Id-1].Text = emoji
-			result.ZoomChatHistory[Id-1].Removed = true
-			if id == nil {
-				result.Statistic.MissingRemoveIds = append(result.Statistic.MissingRemoveIds, Id)
+			parentId := p.findIDFromChatHistoryByText(sentence, uint(id), result.ZoomChatHistory)
+
+			result.ZoomChatHistory[id].Text = emoji
+			result.ZoomChatHistory[id].Removed = true
+
+			if parentId == nil {
+				result.Statistic.MissingRemoveIds = append(result.Statistic.MissingRemoveIds, uint(id))
 				continue
 			}
 
-			for index, v := range result.ZoomChatHistory[*id].ReactIds {
-				if v == Id {
-					result.ZoomChatHistory[*id].ReactIds = append(result.ZoomChatHistory[*id].ReactIds[:index], result.ZoomChatHistory[*id].ReactIds[index+1:]...)
+			for index, v := range result.ZoomChatHistory[id].ReactIds {
+				if v == uint(id) {
+					result.ZoomChatHistory[id].ReactIds = append(result.ZoomChatHistory[id].ReactIds[:index], result.ZoomChatHistory[id].ReactIds[index+1:]...)
 					break
 				}
 			}
 
 		} else if category == NormalText {
-			if textCursor > 0 {
-				result.ZoomChatHistory[Id-1].Text += "\n"
-			}
-			result.ZoomChatHistory[Id-1].Text += text
-
-			textCursor++
+			result.ZoomChatHistory[id].Text = content
 		}
-
 	}
+
 	return
 }
 
@@ -209,7 +214,7 @@ func (p *Parser) extractRemove(message string) (emoji, sentence string) {
 }
 
 func (p *Parser) findIDFromChatHistoryByText(text string, currentIndex uint, history []*ZoomChatHistory) (id *uint) {
-	cursor := currentIndex - 2
+	cursor := currentIndex - 1
 	count := 30
 	for cursor < math.MaxUint32 && count >= 0 {
 
