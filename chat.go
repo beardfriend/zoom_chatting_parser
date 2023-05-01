@@ -115,7 +115,7 @@ func (p *Parser) Parse(file *os.File) (result Result, err error) {
 
 			sentence := p.extractReply(text)
 			id := p.findIDFromChatHistoryByText(sentence, Id, result.ZoomChatHistory)
-			result.ZoomChatHistory[Id-1].Text = sentence
+
 			if id == nil {
 				result.Statistic.MissingReplyIds = append(result.Statistic.MissingReplyIds, Id)
 				continue
