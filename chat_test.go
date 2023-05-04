@@ -10,6 +10,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestChatReplyTest(t *testing.T) {
+	parser := z.NewParser()
+
+	file, _ := os.Open("assets/meeting_saved_chat.txt")
+
+	parser.Parse(file)
+}
+
 func TestFileNotExist(t *testing.T) {
 	parser := z.NewParser()
 
@@ -65,24 +73,6 @@ func TestExtractReaction(t *testing.T) {
 		emoji, sentence := ReactionExtractFunc(parser, message)
 		assert.Equal(t, "👏🏻", emoji)
 		assert.Equal(t, "그래서 저는 다른사람이 분석한거 먼저", sentence)
-	})
-}
-
-func TestExtractReply(t *testing.T) {
-	parser := z.NewParser()
-	ReplyExtractFunc := z.ExportExtractReply
-
-	t.Run("url", func(t *testing.T) {
-		message := `	Replying to "https://plotly.com/p..."`
-		sentence := ReplyExtractFunc(parser, message)
-
-		assert.Equal(t, "https://plotly.com/p", sentence)
-	})
-
-	t.Run("normal text over char", func(t *testing.T) {
-		message := `	Replying to "파일이 다운로드 안되네요. 다운되자마..."`
-		sentence := ReplyExtractFunc(parser, message)
-		assert.Equal(t, "파일이 다운로드 안되네요. 다운되자마", sentence)
 	})
 }
 

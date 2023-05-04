@@ -118,9 +118,9 @@ func (p *Parser) Parse(file io.Reader) (result Result, err error) {
 			result.ZoomChatHistory[*parentId].ReactIds = append(result.ZoomChatHistory[*parentId].ReactIds, uint(id))
 
 		} else if category == Reply {
-			sentence := p.extractReply(content)
+			sentence, replyText := p.extractReply(content)
 			parentId := p.findIDFromChatHistoryByText(sentence, uint(id), result.ZoomChatHistory)
-			result.ZoomChatHistory[id].Text = sentence
+			result.ZoomChatHistory[id].Text = replyText
 
 			if parentId == nil {
 				result.Statistic.MissingReplyIds = append(result.Statistic.MissingReplyIds, uint(id))
@@ -187,14 +187,28 @@ func (p *Parser) extractReaction(message string) (emoji string, sentence string)
 	return
 }
 
-func (p *Parser) extractReply(message string) (sentence string) {
+func (p *Parser) extractReply(message string) (sentence, replyText string) {
 	prefix := `Replying to "`
-
 	start := strings.Index(message, prefix) + len(prefix)
 
-	sentence = message[start : len(message)-1]
+	end := strings.LastIndex(message, `"`)
+	sentence = message[start:end]
+	replyTextRaw := message[end+1:]
+
 	sentence = strings.TrimRight(sentence, ".")
-	return sentence
+
+	for i, v := range strings.Split(replyTextRaw, "\n") {
+		if i < 1 {
+			continue
+		}
+		replyText += strings.TrimLeft(v, "\t")
+
+		if i > 2 {
+			replyText += "\n"
+		}
+	}
+
+	return sentence, replyText
 }
 
 func (p *Parser) extractRemove(message string) (emoji, sentence string) {
