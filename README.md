@@ -14,7 +14,7 @@ go get "github.com/beardfriend/zoom_chatting_parser"
 
 ![](docs/chat_save.png)
 
-2. Open the Zoom chat file and put it into the parser. And
+2. Open the Zoom chat file and put it into the parser.
 
 ```go
 package main
