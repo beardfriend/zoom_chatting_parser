@@ -120,6 +120,7 @@ func (p *Parser) Parse(file io.Reader) (result Result, err error) {
 		} else if category == Reply {
 			sentence := p.extractReply(content)
 			parentId := p.findIDFromChatHistoryByText(sentence, uint(id), result.ZoomChatHistory)
+			result.ZoomChatHistory[id].Text = sentence
 
 			if parentId == nil {
 				result.Statistic.MissingReplyIds = append(result.Statistic.MissingReplyIds, uint(id))
