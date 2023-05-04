@@ -3,8 +3,8 @@ package chat
 import (
 	"bufio"
 	"errors"
+	"io"
 	"math"
-	"os"
 	"strings"
 )
 
@@ -55,15 +55,11 @@ func NewParser() *Parser {
 	return &Parser{}
 }
 
-func (p *Parser) Parse(file *os.File) (result Result, err error) {
-	if file == nil {
-		err = ErrorNoFile
-		return
-	}
-	defer file.Close()
+func (p *Parser) Parse(file io.Reader) (result Result, err error) {
+	texts := make([]string, 0)
 
 	scanner := bufio.NewScanner(file)
-	texts := make([]string, 0)
+
 	for scanner.Scan() {
 		texts = append(texts, scanner.Text())
 	}
